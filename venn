@@ -1,0 +1,93 @@
+#!/usr/bin/env ruby
+
+class Sequence
+  attr_reader :number, :id
+
+  def initialize(number, id)
+    @number = number
+    @id = id
+  end
+
+  def name
+    "tam#{number}"
+  end
+
+  def to_s
+    ">#{name}_#{id}"
+  end
+
+  def <=>(other)
+    return other.number.to_i - self.number.to_i unless other.number.to_i != self.number.to_i
+    other.id.to_i - self.id.to_i
+  end
+end
+
+class Cluster
+  attr_accessor :representative_sequence
+  attr_accessor :sequences
+
+  def initialize
+    @sequences = []
+  end
+
+  def has_only_sequences?(combination)
+    has_all = combination.all? do |s|
+      sequences_names.include? s
+    end
+
+    has_other = sequences_names.any? do |s|
+      !combination.include? s
+    end
+
+    has_all && !has_other
+  end
+
+  def sequences_names
+    sequences.map(&:name)
+  end
+
+  def sequences_numbers
+    sequences.map { |s| s.number.to_i }
+  end
+
+  def sort_sequences
+    sequences.sort!
+  end
+end
+
+clusters = []
+
+File.open($*[0]) do |infile|
+  infile.each_line do |l|
+    if l =~ /^>Cluster/
+      clusters << Cluster.new
+      next
+    end
+
+    m = /^\d+\s+\d+nt,\s+>tam(\d+)_(\d+)... (.+)$/.match(l)
+    next unless m
+
+    sequence = Sequence.new(m[1], m[2])
+    clusters.last.representative_sequence = sequence if m[3] == '*'
+    clusters.last.sequences << sequence
+  end
+end
+
+# clusters.each(&:sort_sequences)
+
+all_sequences_numbers = clusters.map(&:sequences_numbers).sum([]).uniq.sort
+combinations = all_sequences_numbers.count.times.map do |count|
+  all_sequences_numbers.combination(count + 1).to_a
+end
+combinations = combinations.sum([])
+
+Dir.mkdir 'output' unless Dir.exist? 'output'
+
+combinations.each do |combination|
+  File.open("output/#{combination.join('+')}.txt", 'w+') do |outfile|
+    clusters.each do |cluster|
+      combination_names = combination.map { |n| "tam#{n}" }
+      outfile.write "#{cluster.representative_sequence}\n" if cluster.has_only_sequences? combination_names
+    end
+  end
+end
