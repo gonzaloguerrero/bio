@@ -75,11 +75,11 @@ end
 
 # clusters.each(&:sort_sequences)
 
-all_sequences_numbers = clusters.map(&:sequences_numbers).sum([]).uniq.sort
+all_sequences_numbers = clusters.map(&:sequences_numbers).reduce([], :+).uniq.sort
 combinations = all_sequences_numbers.count.times.map do |count|
   all_sequences_numbers.combination(count + 1).to_a
 end
-combinations = combinations.sum([])
+combinations = combinations.reduce([], :+)
 
 Dir.mkdir 'output' unless Dir.exist? 'output'
 
