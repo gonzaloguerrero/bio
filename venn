@@ -81,7 +81,7 @@ combinations = all_sequences_numbers.count.times.map do |count|
 end
 combinations = combinations.reduce([], :+)
 
-Dir.mkdir 'output' unless Dir.exists? 'output'
+Dir.mkdir 'output' unless File.exists? 'output'
 
 combinations.each do |combination|
   File.open("output/#{combination.join('+')}.txt", 'w+') do |outfile|
